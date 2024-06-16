@@ -15,7 +15,12 @@ async function checkPaymentStatus(io) {
                 }
             });
             const status = midtransResponse.data.transaction_status
-            if (status === "cancel" || status === "expired") {
+            if (!status && ((new Date() - new Date(order.created_at)) / (1000 * 60)) > 2) {
+                await knex('orders')
+                    .update('status', 'cancel')
+                    .where('id', order.id)
+            }
+            if (status === "cancel" || status === "expire") {
                 await knex('orders')
                     .update('status', 'cancel')
                     .where('id', order.id)
