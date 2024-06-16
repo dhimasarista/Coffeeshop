@@ -1,0 +1,143 @@
+<!-- views/index.ejs -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% products.forEach(product => { %>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold mb-2"><%= product.name %></h2>
+            <p class="text-gray-600 mb-4">IDR <%= product.price %></p>
+            <form id="orderForm_<%= product.id %>" class="flex items-center">
+                <input type="hidden" name="productIds[]" value="<%= product.id %>">
+                <div class="flex items-center">
+                    <button type="button" class="bg-gray-300 text-gray-700 px-2 py-1 rounded-l-md focus:outline-none" onclick="decrementQuantity('<%= product.id %>')">-</button>
+                    <input id="quantity_<%= product.id %>" type="number" name="quantities[]" value="0" min="0" class="border-t border-b border-gray-300 px-3 py-1 w-16 text-center" disabled>
+                    <button type="button" class="bg-gray-300 text-gray-700 px-2 py-1 rounded-r-md focus:outline-none" onclick="incrementQuantity('<%= product.id %>')">+</button>
+                </div>
+            </form>
+        </div>
+    <% }); %>
+</div>
+
+<!-- Floating Checkout Button -->
+<a href="#" onclick="displaySelectedProducts()" class="fixed bottom-4 right-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-lg">Checkout</a>
+
+<!-- Modal -->
+<div id="modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-md w-96">
+        <h2 class="text-xl font-bold mb-4">Invoice</h2>
+        <ul id="invoice-items" class="divide-y divide-gray-200">
+            <!-- List items will be added dynamically here -->
+        </ul>
+        <button id="payButton" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md mt-4">Bayar</button>
+        <button onclick="hideModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md mt-4 ml-2">Close</button>
+    </div>
+</div>
+
+<script>
+    let selectedProducts = []; // Variable to store selected products
+    const products = JSON.parse(`<%- JSON.stringify(products) %>`);
+
+    function showModal() {
+        const modal = document.getElementById('modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function hideModal() {
+        const modal = document.getElementById('modal');
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
+
+    function incrementQuantity(productId) {
+        const input = document.getElementById(`quantity_${productId}`);
+        input.value = parseInt(input.value) + 1;
+        addToSelectedProducts(productId);
+    }
+
+    function decrementQuantity(productId) {
+        const input = document.getElementById(`quantity_${productId}`);
+        if (parseInt(input.value) > 0) {
+            input.value = parseInt(input.value) - 1;
+            removeFromSelectedProducts(productId);
+        }
+    }
+
+    function addToSelectedProducts(productId) {
+        const index = selectedProducts.findIndex(item => item.productId === productId);
+        if (index === -1) {
+            selectedProducts.push({ productId, quantity: 1 });
+        } else {
+            selectedProducts[index].quantity += 1;
+        }
+    }
+
+    function removeFromSelectedProducts(productId) {
+        const index = selectedProducts.findIndex(item => item.productId === productId);
+        if (index !== -1) {
+            selectedProducts[index].quantity -= 1;
+            if (selectedProducts[index].quantity === 0) {
+                selectedProducts.splice(index, 1);
+            }
+        }
+    }
+
+    function displaySelectedProducts() {
+        const invoiceItems = document.getElementById('invoice-items');
+        invoiceItems.innerHTML = '';
+
+        selectedProducts.forEach(item => {
+            const product = products.find(p => p.id === item.productId);
+            const productName = product.name;
+            const productPrice = product.price;
+            const totalPrice = productPrice * item.quantity;
+            if (item.quantity > 0) { // Only add products with quantity > 0 to the invoice
+                const listItem = document.createElement('li');
+                listItem.className = 'flex justify-between items-center py-2';
+                listItem.innerHTML = `
+                    <span>${productName} (Quantity: ${item.quantity})</span>
+                    <span>IDR ${totalPrice}</span>
+                `;
+                invoiceItems.appendChild(listItem);
+            }
+        });
+
+        showModal(); // Show modal after displaying the invoice
+    }
+
+    // Event listener untuk tombol 'Bayar'
+document.getElementById('payButton').addEventListener('click', async () => {
+    $.ajax({
+        url: "/orders",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ products: selectedProducts }),
+        success: function(result) {
+            let orderId = result.orderId;
+            if (result.status !== 200) {
+                return 0;
+            }
+            // Menampilkan Snap untuk pembayaran
+            checkPayment(result.transactionToken, orderId)
+        },
+        error: function(result) {
+            Swal.fire({
+                title: 'Error',
+                text: JSON.stringify(result, null, 2),
+                icon: 'error'
+            });
+        },
+        complete: function(data){
+            selectedProducts = [];
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.value = 0;
+            });
+            hideModal();
+        }
+    });
+});
+document.addEventListener('DOMContentLoaded', function () {
+    socket.on('alert', (result) => {
+        checkPayment(result.transactionToken, result.orderId)
+    });
+})
+    
+</script>

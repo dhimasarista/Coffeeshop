@@ -1,0 +1,106 @@
+<!-- views/orders.ejs -->
+
+<h1 class="text-3xl font-bold mb-8">Orders</h1>
+<table id="orders-table" class="display table w-full shadow-md rounded overflow-hidden">
+    <thead>
+      <tr class="text-left bg-gray-500 text-white">
+        <th class="px-6 py-4">Order ID</th>
+        <th class="px-6 py-4">Status</th>
+        <th class="px-6 py-4">Total Amount</th>
+        <th class="px-6 py-4">Products</th>
+        <th class="px-6 py-4">Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      </tbody>
+  </table>
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.css" />
+  <script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const socket = io();
+
+        // Inisialisasi DataTable
+        const table = $('#orders-table').DataTable({
+            ajax: {
+                url: '/orders/list',
+                dataSrc: 'data',
+            },
+            
+            columns: [
+                { data: 'id' },
+                {
+                    data: 'status',
+                    render: function (data, type, row) {
+                        if (data === 'pending') {
+                            return '<span class="bg-yellow-500 text-white py-1 px-2 rounded-md text-xs">Pending</span>';
+                        } else if (data === 'cancel') {
+                            return '<span class="bg-red-500 text-white py-1 px-2 rounded-md text-xs">Cancel</span>';
+                        } else if (data === 'success') {
+                            return '<span class="bg-green-500 text-white py-1 px-2 rounded-md text-xs">Success</span>';
+                        }
+                        return '';
+                    }
+                },
+                { data: 'total_amount', render: function (data, type, row) { 
+                    return `IDR ${row.total_amount}`
+                    } 
+                },
+                {
+                    data: 'products',
+                    render: function (data, type, row) {
+                        return data.map(product => `
+                            <div>${product.name} (Quantity: ${product.quantity}) - IDR ${product.price * product.quantity}</div>
+                        `).join('');
+                    }
+                },
+                { 
+                    data: 'transaction_token',
+                    render: function(data, type, row) {
+                        return `
+                        <div class="flex items-center space-x-4">
+                            <a href="#" onclick="showPayment('${data}', '${row.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-lg">Show</a>
+                            <a href="#" onclick="checkPayment('${data}', '${row.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-lg">Detail</a>
+                        </div>
+                        `
+                    }
+                },
+            ]
+        });
+
+        // Event untuk menerima data orders dari server
+        socket.on('orders', function (updatedOrders) {
+            table.ajax.reload(); // Reload data table ketika ada perubahan data
+        });    
+    })
+
+    function showPayment(token, orderId){
+        $.ajax({
+            url: "/orders/show",
+            type: "POST",
+            dataType: "json",
+            data: {
+                token: token,
+                orderId: orderId
+            },
+            success: function(response) {
+                if (response.status === 200) {
+                    console.log(response); // Tindakan jika pembayaran berhasil
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: "Pembayaran gagal diperbarui di server",
+                        icon: 'error'
+                    });
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    title: 'Error',
+                    text: "Gagal melakukan permintaan ke server",
+                    icon: 'error'
+                });
+            }
+    });
+    }
+</script>

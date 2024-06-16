@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Shop</title>
+    <!-- Add Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        /* CSS for centering the title */
+        .title-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .title-text {
+            text-align: center;
+            font-size: 1.5rem; /* Adjust font size as needed */
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-pZ40T3iL913MGQy1"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        function checkPayment(token, orderId) {
+            // Menampilkan Snap untuk pembayaran
+            snap.pay(token, {
+                onSuccess: function(result) {
+                    // Jika pembayaran berhasil
+                    $.get(`/orders/pay/${result.order_id}`, function(response) {
+                        if (response.status === 200) {
+                            Swal.fire({
+                                title: 'Success',
+                                text: "Pesanan Berhasil Dibayar",
+                                timer: 1000,
+                                showConfirmButton: false,
+                                icon: 'success'
+                            })
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: "Pembayaran gagal diperbarui di server",
+                                showConfirmButton: false,
+                                timer: 1000,
+                                icon: 'error'
+                            });
+                        }
+                    });
+                },
+                onPending: function(result) {
+                },
+                onError: function(result) {
+                    // $.get(`/orders/cancel/${orderId}`, function(response) {
+                    //     if (response.status === 200) {
+                    //         Swal.fire({
+                    //             title: 'Cancelled',
+                    //             text: "Pembayaran dibatalkan",
+                    //             showConfirmButton: false,
+                    //             timer: 1000,
+                    //             icon: 'info'
+                    //         });
+                    //     } else {
+                    //         Swal.fire({
+                    //             title: 'Error',
+                    //             text: "Pembayaran gagal",
+                    //             showConfirmButton: false,
+                    //             timer: 1000,
+                    //             icon: 'error'
+                    //         });
+                    //     }
+                    // });
+                },
+                onClose: function() {
+                    
+                }
+            });
+        }
+    </script>
+</head>
+<body class="bg-gray-100">
+    <header class="bg-white py-4 shadow">
+        <div class="container mx-auto px-4">
+            <div class="title-container">
+                <h1 class="text-xl font-bold text-gray-800 title-text">KOPINANG ENGKAU DENGAN BISMILLAH</h1>
+            </div>
+        </div>
+    </header>
+    <main class="container mx-auto px-4 py-8">
+        <!-- Your content here -->
+        <%- body %>
+    </main>
+</body>
+</html>
