@@ -81,6 +81,16 @@
     }
 
     function displaySelectedProducts() {
+        if (selectedProducts.length === 0) {
+            Swal.fire({
+                title: 'Pilih Item Terlebih dahulu',
+                text: "",
+                timer: 1000,
+                showConfirmButton: false,
+                icon: 'warning'
+            })
+            return 0;
+        }
         const invoiceItems = document.getElementById('invoice-items');
         invoiceItems.innerHTML = '';
 

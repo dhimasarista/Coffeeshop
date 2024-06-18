@@ -5,7 +5,6 @@ const { getOrdersWithProducts } = require('./product');
 async function checkPaymentStatus(io) {  
     try {
         const ordersToUpdate = await knex('orders').where("status", "pending")
-        // Loop melalui setiap pesanan dan ubah status menjadi cancel
         for (const order of ordersToUpdate) {
             const midtransResponse = await axios.get(`https://api.sandbox.midtrans.com/v2/${order.id}/status`, {
                 headers: {
