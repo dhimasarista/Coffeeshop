@@ -22,6 +22,7 @@
 
         // Inisialisasi DataTable
         const table = $('#orders-table').DataTable({
+            ordering: false,
             ajax: {
                 url: '/orders/list',
                 dataSrc: 'data',
