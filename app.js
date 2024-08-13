@@ -41,7 +41,6 @@ io.on('connection', (socket) => {
     socket.emit('orders', getOrdersWithProducts())
     // socket.on('alert', () => {
     //     console.log('Received alert event from client')
-    //     // Lakukan tindakan sesuai kebutuhan
     //     socket.emit('alert', 'This is an alert from the server')
     // })
 
