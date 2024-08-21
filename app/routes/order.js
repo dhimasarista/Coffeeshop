@@ -4,7 +4,7 @@ const knex = require('../config/knex')
 const { getOrdersWithProducts } = require("../utility/product")
 
 function OrderRoutes(app, io) {
-    app.get('/orders/pay/:id', async (req, res) => {
+    app.get('/api/orders/pay/:id', async (req, res) => {
         try {
             const id = req.params.id
             const result = await knex("orders").update("status", "success").where("id", id)
@@ -15,7 +15,7 @@ function OrderRoutes(app, io) {
         }
     })
 
-    app.get("/orders/cancel/:id", async (req, res) => {
+    app.get("/api/orders/cancel/:id", async (req, res) => {
         try {
             const id = req.params.id
             const result = await knex("orders").update("status", "cancel").where("id", id)
@@ -26,7 +26,7 @@ function OrderRoutes(app, io) {
         }
     })
 
-    app.post("/orders/show", (req, res) => {
+    app.post("/api/orders/show", (req, res) => {
         try {
             io.emit('alert', { transactionToken: req.body.token, orderId: req.body.orderId })
             return res.json({status: 200, message: "success"})
@@ -35,7 +35,7 @@ function OrderRoutes(app, io) {
         }
     })
 
-    app.get("/orders/list", async (req, res) => {
+    app.get("/api/orders/list", async (req, res) => {
         try {
             const orders = await getOrdersWithProducts()
 
@@ -46,11 +46,11 @@ function OrderRoutes(app, io) {
         }
     })
 
-    app.get('/orders', async (req, res) => {
+    app.get('/api/orders', async (req, res) => {
         try {
             const orders = await getOrdersWithProducts()
 
-            res.render('orders', { orders })
+            res.status(200).json({ orders })
         } catch (error) {
             console.error('Error fetching orders:', error)
             res.status(500).send('Internal Server Error')
@@ -58,7 +58,7 @@ function OrderRoutes(app, io) {
     })
 
 
-    app.post('/orders', async (req, res) => {
+    app.post('/api/orders', async (req, res) => {
         const { products } = req.body
         try {
             let totalAmount = 0
